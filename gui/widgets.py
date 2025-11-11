@@ -1,3 +1,5 @@
+"""Кастомные виджеты для GUI"""
+
 import os
 import pathlib
 from PyQt6.QtWidgets import (
@@ -15,6 +17,7 @@ class MainTab(QWidget):
     
     def __init__(self):
         super().__init__()
+        self.platform_status = {}  # Для отслеживания статуса платформ
         self.setup_ui()
     
     def setup_ui(self):
@@ -46,19 +49,36 @@ class MainTab(QWidget):
 
         # Платформы
         plat_group = QGroupBox("Платформы")
-        plat_layout = QHBoxLayout()
+        plat_layout = QVBoxLayout()
+        
+        # Чекбоксы
+        check_layout = QHBoxLayout()
         self.chk_youtube = QCheckBox("YouTube Shorts")
         self.chk_instagram = QCheckBox("Instagram Reels")
         self.chk_tiktok = QCheckBox("TikTok")
-        plat_layout.addWidget(self.chk_youtube)
-        plat_layout.addWidget(self.chk_instagram)
-        plat_layout.addWidget(self.chk_tiktok)
+        check_layout.addWidget(self.chk_youtube)
+        check_layout.addWidget(self.chk_instagram)
+        check_layout.addWidget(self.chk_tiktok)
+        
+        # Статусы платформ
+        status_layout = QVBoxLayout()
+        self.youtube_status = QLabel("⏳ Ожидание")
+        self.instagram_status = QLabel("⏳ Ожидание") 
+        self.tiktok_status = QLabel("⏳ Ожидание")
+        
+        status_layout.addWidget(QLabel("Статусы:"))
+        status_layout.addWidget(self.youtube_status)
+        status_layout.addWidget(self.instagram_status)
+        status_layout.addWidget(self.tiktok_status)
+        
+        plat_layout.addLayout(check_layout)
+        plat_layout.addLayout(status_layout)
         plat_group.setLayout(plat_layout)
         layout.addWidget(plat_group)
 
         # Кнопка загрузки и прогресс
         h = QHBoxLayout()
-        self.btn_upload = QPushButton("Загрузить")
+        self.btn_upload = QPushButton("🔄 Загрузить на все платформы")
         self.btn_upload.clicked.connect(self.start_upload)
         self.progress = QProgressBar()
         h.addWidget(self.btn_upload)
@@ -67,6 +87,38 @@ class MainTab(QWidget):
 
         layout.addStretch()
         self.setLayout(layout)
+        
+        # Инициализируем статусы
+        self.reset_platform_status()
+
+    def reset_platform_status(self):
+        """Сброс статусов платформ"""
+        self.youtube_status.setText("⏳ Ожидание")
+        self.instagram_status.setText("⏳ Ожидание")
+        self.tiktok_status.setText("⏳ Ожидание")
+        self.youtube_status.setStyleSheet("color: gray;")
+        self.instagram_status.setStyleSheet("color: gray;")
+        self.tiktok_status.setStyleSheet("color: gray;")
+
+    def update_platform_status(self, platform, status):
+        """Обновление статуса конкретной платформы"""
+        status_widgets = {
+            'youtube': self.youtube_status,
+            'instagram': self.instagram_status, 
+            'tiktok': self.tiktok_status
+        }
+        
+        status_config = {
+            'waiting': ("⏳ Ожидание", "gray"),
+            'started': ("🚀 Загружается...", "blue"),
+            'completed': ("✅ Завершено", "green"),
+            'error': ("❌ Ошибка", "red")
+        }
+        
+        if platform in status_widgets and status in status_config:
+            text, color = status_config[status]
+            status_widgets[platform].setText(text)
+            status_widgets[platform].setStyleSheet(f"color: {color}; font-weight: bold;")
 
     def browse_video(self):
         path, _ = QFileDialog.getOpenFileName(
